@@ -9,6 +9,7 @@
 #include "base/vector.h"
 #include "tools/Random.h"
 #include "tools/stats.h"
+#include "Evolve/World_select.h"
 
 #include "TestcaseSet.h"
 
@@ -89,7 +90,14 @@ public:
     };
 
     void Setup(MEGPConfig & config) {
+        SetCache();
+        SetMutFun([](emp::AvidaGP & org, emp::Random & r){return true;});
+        SetMutateBeforeBirth();
         InitConfigs(config);
+        SetupFitnessFile().SetTimingRepeat(10);
+        SetupSystematicsFile().SetTimingRepeat(10);
+        SetupPopulationFile().SetTimingRepeat(10);
+        
         testcases.LoadTestcases(PROBLEM);
         SetFitFun(goal_function);
         AddPhenotype("Num Scopes", scope_count_fun, 0, 16);
@@ -114,24 +122,24 @@ public:
 
     void InitPop() {
         emp::Random & random = GetRandom();
-        emp::AvidaGP cpu;
-        cpu.PushRandom(random, GENOME_SIZE);
-        Inject(cpu.GetGenome());
+        for (int i = 0 ; i < 100; i++) {
+            emp::AvidaGP cpu;
+            cpu.PushRandom(random, GENOME_SIZE);
+            Inject(cpu.GetGenome());
+        }
+    }
+
+    void RunStep() {
+
+        std::cout  << POP_SIZE <<  std::endl;
+        emp::RandomSelect(*this, POP_SIZE);
+        std::cout  << "done selecting" <<  std::endl;
+        Update();
     }
 
     void Run() {
         for (size_t u = 0; u <= UPDATES; u++) {
-            for (size_t i = 0; i < GetSize(); ++i) {
-                size_t id = GetRandom().GetUInt(GetSize());      
-                if (IsOccupied(id)) {
-                    emp::AvidaGP offspring = *(pop[id]);
-                    DoBirth(offspring.GetGenome(), id);
-                }
-            }
-            if (u % 50 == 0) {
-                std::cout << "UD: " << u << std::endl;
-                PrintGrid(std::cout, "----");
-            }
+            RunStep();
         }  
     }
 
