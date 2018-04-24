@@ -59,12 +59,10 @@ public:
             if (divisor == 0) {
                 divisor = 1;
             }   
-            double result = 1 - (std::abs(org.GetOutput(0) - testcases[testcase].second)/divisor);
+            double result = 1 / (std::abs(org.GetOutput(0) - testcases[testcase].second)/divisor);
             // emp_assert(std::abs(result) != INFINITY);
-            if (result == -INFINITY && (org.GetOutput(0) - testcases[testcase].second == 0)) {
-                result = 1;
-            } else {
-                result = -999999999;
+            if (result == INFINITY) {
+                result = 1000;
             }
             score += result;
         }
@@ -85,8 +83,11 @@ public:
         return scopes.size(); 
     };
 
-    std::function<double(emp::AvidaGP &)> inst_ent_fun = [](emp::AvidaGP & val){ 
-        return emp::ShannonEntropy(val.GetGenome().sequence); 
+    std::function<size_t(emp::AvidaGP::Instruction&)> GetInstID = [](emp::AvidaGP::Instruction & inst){return inst.id;};
+
+    std::function<double(emp::AvidaGP &)> inst_ent_fun = [this](emp::AvidaGP & val){ 
+        emp::vector<size_t> inst_list = emp::ApplyFunction(GetInstID, val.GetGenome().sequence);
+        return emp::ShannonEntropy(inst_list); 
     };
 
     void Setup(MEGPConfig & config) {
@@ -101,8 +102,9 @@ public:
         testcases.LoadTestcases(PROBLEM);
         SetFitFun(goal_function);
         AddPhenotype("Num Scopes", scope_count_fun, 0, 16);
-        AddPhenotype("Entropy", inst_ent_fun, 0, 4.6);
+        AddPhenotype("Entropy", inst_ent_fun, 0, 6);
         emp::SetMapElites(*this, {SCOPE_RES, ENTROPY_RES});
+
         InitPop();
     }
 
@@ -130,10 +132,8 @@ public:
     }
 
     void RunStep() {
-
-        std::cout  << POP_SIZE <<  std::endl;
-        emp::RandomSelect(*this, POP_SIZE);
-        std::cout  << "done selecting" <<  std::endl;
+        std::cout << update << std::endl;
+        emp::RandomSelectSparse(*this, POP_SIZE);
         Update();
     }
 
