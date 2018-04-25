@@ -16,19 +16,19 @@
 EMP_BUILD_CONFIG( MEGPConfig,
   GROUP(DEFAULT, "Default settings for box experiment"),
   VALUE(SEED, int, 55711224, "Random number seed (0 for based on time)"),
-  VALUE(POP_SIZE, uint32_t, 1000, "Number of organisms in the popoulation."),
+  VALUE(POP_SIZE, uint32_t, 100, "Number of organisms in the popoulation."),
   VALUE(UPDATES, uint32_t, 1000, "How many generations should we process?"),
   VALUE(SELECTION, std::string, "MAPELITES", "What selection scheme should we use?"),
   VALUE(MUT_RATE, double, 0.005, "Per-site mutation rate"),
-  VALUE(PROBLEM, std::string, "testcases/count-odds.csv", "Which set of testcases should we use? (or enter 'box' for the box problem"),
-  VALUE(N_TEST_CASES, uint32_t, 200, "How many test cases to use"),  
-  VALUE(GENOME_SIZE, int, 200, "Length of genome"),
-  VALUE(SCOPE_RES, long unsigned int, 200, "Number of bins to make on scope axis"),
-  VALUE(ENTROPY_RES, long unsigned int, 200, "Number of bins to make on entropy axis"),
-  VALUE(EVAL_TIME, int, 1000, "Steps to evaluate for.")
+  VALUE(PROBLEM, std::string, "testcases/examples-squares.csv", "Which set of testcases should we use? (or enter 'box' for the box problem"),
+  VALUE(N_TEST_CASES, uint32_t, 10, "How many test cases to use"),  
+  VALUE(GENOME_SIZE, int, 10, "Length of genome"),
+  VALUE(SCOPE_RES, long unsigned int, 16, "Number of bins to make on scope axis"),
+  VALUE(ENTROPY_RES, long unsigned int, 10, "Number of bins to make on entropy axis"),
+  VALUE(EVAL_TIME, int, 100, "Steps to evaluate for.")
 )
 
-class MapElitesGPWorld : emp::World<emp::AvidaGP> {
+class MapElitesGPWorld : public emp::World<emp::AvidaGP> {
 
 public:
 
@@ -54,7 +54,7 @@ public:
                 org.SetInput(i, testcases[testcase].first[i]);
             }
             org.SetOutput(0,-99999); // Otherwise not outputting anything is a decent strategy
-            org.Process(200);
+            org.Process(EVAL_TIME);
             int divisor = testcases[testcase].second;
             if (divisor == 0) {
                 divisor = 1;
@@ -92,7 +92,16 @@ public:
 
     void Setup(MEGPConfig & config) {
         SetCache();
-        SetMutFun([](emp::AvidaGP & org, emp::Random & r){return true;});
+        SetMutFun([this](emp::AvidaGP & org, emp::Random & r){
+            int count = 0;
+            for (int i = 0; i < GENOME_SIZE; ++i) {
+                if (r.P(MUT_RATE)) {
+                    org.RandomizeInst(i, r);
+                    count++;
+                }
+            }
+            return count;
+        });
         SetMutateBeforeBirth();
         InitConfigs(config);
         SetupFitnessFile().SetTimingRepeat(10);
