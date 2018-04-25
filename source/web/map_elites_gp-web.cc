@@ -10,8 +10,9 @@ MEGPConfig config;
 
 UI::Document doc("emp_base");
 UI::Canvas canvas;
+UI::Div program_info;
 const double world_width = 800;
-const double world_height = 500;
+const double world_height = 800;
 
 MapElitesGPWorld world;
 
@@ -36,13 +37,13 @@ void DrawWorldCanvas() {
       const double fitness = world.CalcFitnessID(org_id);
       if (fitness == 0.0) {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "#444444", "black");
-      } else if (fitness < 0.6) {
+      } else if (fitness < 10) {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "pink", "black");
-      } else if (fitness < 0.8) {
+      } else if (fitness < 100) {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "#EEEE33", "black");  // Pale Yellow
-      } else if (fitness < 0.95) {
+      } else if (fitness < 1000) {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "#88FF88", "black");  // Pale green
-      } else if (fitness < 0.98) {
+      } else if (fitness < 9000) {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "#00CC00", "black");  // Mid green
       } else {
         canvas.Rect(x*org_x, y*org_y, org_x, org_y, "green", "black");    // Full green
@@ -62,6 +63,8 @@ void DrawWorldCanvas() {
 
 
 void CanvasClick(int x, int y) {
+  program_info.Clear();
+
   // UI::Canvas canvas = doc.Canvas("world_canvas");
   const double canvas_x = (double) canvas.GetWidth();
   const double canvas_y = (double) canvas.GetHeight();
@@ -72,13 +75,16 @@ void CanvasClick(int x, int y) {
   const size_t world_y = world.GetHeight();
   size_t pos_x = (size_t) (world_x * px);
   size_t pos_y = (size_t) (world_y * py);
-  std::cout << "x: " << x << " y: " << y << "world_x: " << world_x << " world_y: " << world_y << " canvas_x: " << canvas_x <<" canvas_y: " << canvas_y  << " px: " << px <<  " py: " << py <<" pos_x: " << pos_x << " pos_y: " << pos_y <<std::endl;
+  // std::cout << "x: " << x << " y: " << y << "world_x: " << world_x << " world_y: " << world_y << " canvas_x: " << canvas_x <<" canvas_y: " << canvas_y  << " px: " << px <<  " py: " << py <<" pos_x: " << pos_x << " pos_y: " << pos_y <<std::endl;
   size_t org_id = pos_y * world_x + pos_x;
+  std::stringstream ss;
   if (world.CalcFitnessID(org_id) > 0.0) {
-    world[org_id].PrintGenome();
+    ss << "Fitness: " << world.CalcFitnessID(org_id) << "<br>";
+    world[org_id].PrintGenomeHTML(ss);
+    program_info << UI::Text() << ss.str();
   }
 
-  emp::Alert("Click at (", pos_x, ",", pos_y, ") = ", org_id);
+  // emp::Alert("Click at (", pos_x, ",", pos_y, ") = ", org_id);
 }
 
 
@@ -95,6 +101,7 @@ int main()
   doc << "<br>";
 
   canvas = doc.AddCanvas(world_width, world_height, "world_canvas");
+  program_info = doc.AddDiv("program_info");
   canvas.On("click", CanvasClick);
   DrawWorldCanvas();
 }
