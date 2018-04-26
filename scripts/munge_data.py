@@ -15,40 +15,35 @@ import os
 # the glob pattern provided in the first command-line argument.
 
 def main():
-
-	glob_pattern = sys.argv[1]
-	outfilename = sys.argv[2]
-
-	frames = []
+    glob_pattern = sys.argv[1]
+    outfilename = sys.argv[2]
+    frames = []
     trait_frames = []
 
 	# print(glob_pattern, glob.glob(glob_pattern))
 
+    for dirname in glob.glob(glob_pattern):
+        run_log = dirname + "/run.log"
+        if not (os.path.exists(run_log)):
+            print("run log not found")
+            continue
 
-	for dirname in glob.glob(glob_pattern):
+        local_data = {}
 
-		run_log = dirname + "/run.log"
-
-		if not (os.path.exists(run_log)):
-			print("run log not found")
-			continue
-
-		local_data = {}
-
-		with open(run_log) as run_log_file:
-			for line in run_log_file:
-				if line.startswith("Doing initial"):
-					break
-				elif not line.startswith("set"):
-					continue
-				line = line.split()
-				local_data[line[1]] = line[2]
+        with open(run_log) as run_log_file:
+            for line in run_log_file:
+                if line.startswith("Doing initial"):
+                    break
+                elif not line.startswith("set"):
+                    continue
+                line = line.split()
+                local_data[line[1]] = line[2]
 
 		# Create function
 
-		temp = pd.DataFrame()
-		for k in local_data:
-			temp[k] = local_data[k]
+        temp = pd.DataFrame()
+        for k in local_data:
+            temp[k] = local_data[k]
 
         fitness_df = pd.read_csv(dirname+"/fitness.csv", index_col="update")
         systematics_df = pd.read_csv(dirname+"/systematics.csv", index_col="update")
@@ -64,8 +59,7 @@ def main():
 
     all_data = pd.concat(frames)
     trait_data = pd.concat(trait_frames)
-
-	all_data.to_csv(outfilename+".csv",index=False)
+    all_data.to_csv(outfilename+".csv",index=False)
     trait_data.to_csv(outfilename+"_traits.csv", index=False)
 
 	#print(df)
