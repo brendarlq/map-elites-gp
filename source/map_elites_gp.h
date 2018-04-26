@@ -151,7 +151,9 @@ public:
         trait_file.SetTimingRepeat(10);
         trait_file.PrintHeaderKeys();
 
+        #ifndef EMSCRIPTEN
         OnUpdate([this](int ud){if (ud % 100 == 0){SnapshotSingleFile(ud);}});
+        #endif
 
         testcases.LoadTestcases(PROBLEM);
         SetFitFun(goal_function);
@@ -167,7 +169,9 @@ public:
 
     void SnapshotSingleFile(size_t update) {
         std::string snapshot_dir = "pop_" + emp::to_string((int)update);
+        #ifndef EMSCRIPTEN
         mkdir(snapshot_dir.c_str(), ACCESSPERMS);
+        #endif        
         // For each program in the population, dump the full program description in a single file.
         std::ofstream prog_ofstream(snapshot_dir + "/pop_" + emp::to_string((int)update) + ".pop");
         for (size_t i : GetValidOrgIDs())
