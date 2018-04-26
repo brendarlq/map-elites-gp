@@ -1,0 +1,23 @@
+set email dolsonem@msu.edu
+set freq_email Crash
+set description box
+set mem_request 4
+set walltime 24
+set config_dir configs
+set dest_dir /mnt/scratch/dolsonem/map-elites-gp/data/round1
+
+1..30 ME_squares time ./map_elites_gp -PROBLEM testcases/examples-squares.csv -SEED $seed -GENOME_SIZE 20 -N_TEST_CASES 11 -EVAL_TIME 200 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID 
+
+31..60 TOURNAMENT_squares time ./map_elites_gp -SELECTION TOURNAMENT -PROBLEM testcases/examples-squares.csv -SEED $seed -EVAL_TIME 200 -GENOME_SIZE 20 -N_TEST_CASES 11 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID
+
+61..90 ME_smallest time ./map_elites_gp -PROBLEM testcases/examples-smallest.csv -SEED $seed -GENOME_SIZE 200 -N_TEST_CASES 100 -EVAL_TIME 500 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID 
+
+91..120 TOURNAMENT_smallest time ./map_elites_gp -SELECTION TOURNAMENT -PROBLEM testcases/examples-smallest.csv -SEED $seed -EVAL_TIME 500 -GENOME_SIZE 200 -N_TEST_CASES 100 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID
+
+121..150 ME_collatz time ./map_elites_gp -PROBLEM testcases/examples-collatz-numbers.csv -SEED $seed -GENOME_SIZE 200 -N_TEST_CASES 200 -EVAL_TIME 500 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID 
+
+151..180 TOURNAMENT_collatz time ./map_elites_gp -SELECTION TOURNAMENT -PROBLEM testcases/examples-collatz-numbers.csv -SEED $seed -EVAL_TIME 500 -GENOME_SIZE 200 -N_TEST_CASES 200 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID
+
+181..210 ME_dow time ./map_elites_gp -PROBLEM testcases/SymbolicRegressionCompetition.csv -SEED $seed -GENOME_SIZE 200 -N_TEST_CASES 200 -EVAL_TIME 500 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID 
+
+211..240 TOURNAMENT_dow time ./map_elites_gp -SELECTION TOURNAMENT -PROBLEM testcases/SymbolicRegressionCompetition.csv -SEED $seed -EVAL_TIME 500 -GENOME_SIZE 200 -N_TEST_CASES 200 -POP_SIZE 1000 -UPDATES 1001 ; qstat -f $PBS_JOBID
