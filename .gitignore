@@ -1,0 +1,5 @@
+pop_*
+map_elites_gp
+*.csv
+*.dat
+.vscode/
