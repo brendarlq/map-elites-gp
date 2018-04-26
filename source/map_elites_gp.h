@@ -25,7 +25,7 @@ EMP_BUILD_CONFIG( MEGPConfig,
   VALUE(N_TEST_CASES, uint32_t, 11, "How many test cases to use"),  
   VALUE(GENOME_SIZE, int, 20, "Length of genome"),
   VALUE(SCOPE_RES, long unsigned int, 16, "Number of bins to make on scope axis"),
-  VALUE(ENTROPY_RES, long unsigned int, 16, "Number of bins to make on entropy axis"),
+  VALUE(ENTROPY_RES, long unsigned int, 25, "Number of bins to make on entropy axis"),
   VALUE(EVAL_TIME, int, 200, "Steps to evaluate for.")
 )
 
@@ -50,7 +50,9 @@ public:
     std::function<double(emp::AvidaGP&)> goal_function = [this](emp::AvidaGP org){
         double score = 0;
         emp::Random rand = GetRandom();
-        for (int testcase : testcases.GetSubset(N_TEST_CASES, &rand)) {
+        // for (int testcase : testcases.GetSubset(N_TEST_CASES, &rand)) {
+        emp_assert(N_TEST_CASES <= testcases.GetTestcases().size());
+        for (size_t testcase = 0; testcase < N_TEST_CASES; ++testcase) {
             org.ResetHardware();
             for (size_t i = 0; i < testcases[testcase].first.size(); i++) {
                 org.SetInput(i, testcases[testcase].first[i]);
@@ -117,8 +119,9 @@ public:
         
         testcases.LoadTestcases(PROBLEM);
         SetFitFun(goal_function);
-        AddPhenotype("Num Scopes", scope_count_fun, 1, 16);
-        AddPhenotype("Entropy", inst_ent_fun, 0, 6);
+        emp::AvidaGP org;
+        AddPhenotype("Num Scopes", scope_count_fun, 1, 17);
+        AddPhenotype("Entropy", inst_ent_fun, 0, -1*emp::Log2(1.0/org.GetInstLib()->GetSize())+.1);
         emp::SetMapElites(*this, {SCOPE_RES, ENTROPY_RES});
 
         InitPop();
