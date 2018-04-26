@@ -14,6 +14,13 @@ int main(int argc, char* argv[])
   if (args.TestUnknown() == false) exit(0);  // If there are leftover args, throw an error.
   emp::Random rnd(config.SEED());
   
+  std::cout << "==============================" << std::endl;
+  std::cout << "|    How am I configured?    |" << std::endl;
+  std::cout << "==============================" << std::endl;
+  config.Write(std::cout);
+  std::cout << "==============================\n"
+            << std::endl;
+
   MapElitesGPWorld world(rnd);
   world.Setup(config);
   world.Run();
