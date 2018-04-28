@@ -62,13 +62,26 @@ public:
             for (size_t i = 0; i < testcases[testcase].first.size(); i++) {
                 org.SetInput(i, testcases[testcase].first[i]);
             }
-            org.SetOutput(0,-99999); // Otherwise not outputting anything is a decent strategy
             org.Process(EVAL_TIME);
             int divisor = testcases[testcase].second;
             if (divisor == 0) {
                 divisor = 1;
-            }   
-            double result = 1 / (std::abs(org.GetOutput(0) - testcases[testcase].second)/divisor);
+            }
+            const std::unordered_map<int, double> & outputs = org.GetOutputs();
+            int min_output = 0;
+            double result;
+            for (auto out : outputs) {
+                if (out.first < min_output) {
+                    min_output = out.first;
+                }
+            }
+
+            if (outputs.size() != 0) {
+                result = 1 / (std::abs(org.GetOutput(min_output) - testcases[testcase].second)/divisor);
+            } else {
+                result = 0;
+            }
+
             // emp_assert(std::abs(result) != INFINITY);
             if (result > 1000) {
                 result = 1000;
@@ -112,11 +125,11 @@ public:
     };
 
     std::function<size_t(size_t id)> inst_ent_bin = [this](size_t id) {
-      return GetPhenotypes().EvalBin(*pop[id], {SCOPE_RES, ENTROPY_RES});
+      return GetPhenotypes()[1].EvalBin(*pop[id], ENTROPY_RES);
     };
 
     std::function<size_t(size_t id)> scope_count_bin = [this](size_t id) {
-      return GetPhenotypes().EvalBin(*pop[id], {SCOPE_RES, ENTROPY_RES});
+      return GetPhenotypes()[0].EvalBin(*pop[id], SCOPE_RES);
     };
 
     std::function<emp::vector<size_t>() > get_pop = [this](){return GetValidOrgIDs();};
