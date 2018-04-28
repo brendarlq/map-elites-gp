@@ -111,6 +111,14 @@ public:
         return inst_ent_fun(*pop[id]);
     };
 
+    std::function<size_t(size_t id)> inst_ent_bin = [this](size_t id) {
+      return GetPhenotypes().EvalBin(*pop[id], {SCOPE_RES, ENTROPY_RES});
+    };
+
+    std::function<size_t(size_t id)> scope_count_bin = [this](size_t id) {
+      return GetPhenotypes().EvalBin(*pop[id], {SCOPE_RES, ENTROPY_RES});
+    };
+
     std::function<emp::vector<size_t>() > get_pop = [this](){return GetValidOrgIDs();};
 
     std::function<size_t(size_t)> return_id = [](size_t id){return id;};
@@ -147,6 +155,8 @@ public:
         trait_file.AddContainerFun(scope_count_fun_ptr, "scope_count", "Number of scopes used");
         trait_file.AddContainerFun(goal_function_ptr, "fitness", "Fitness");
         trait_file.AddContainerFun(return_id, "id", "ID");
+	trait_file.AddContainerFun(scope_count_bin, "scope_count_bin", "Bin that scope count falls into");
+	trait_file.AddContainerFun(inst_ent_bin, "inst_ent_bin", "Bin that instruction entropy falls into");
         trait_file.AddVar(update, "update", "Update");
         trait_file.SetTimingRepeat(10);
         trait_file.PrintHeaderKeys();
@@ -159,7 +169,7 @@ public:
         SetFitFun(goal_function);
         emp::AvidaGP org;
         AddPhenotype("Num Scopes", scope_count_fun, 1, 17);
-        AddPhenotype("Entropy", inst_ent_fun, 0, -1*emp::Log2(1.0/org.GetInstLib()->GetSize())+.1);
+        AddPhenotype("Entropy", inst_ent_fun, 0, -1*emp::Log2(1.0/org.GetInstLib()->GetSize())+1);
         if (SELECTION == "MAPELITES") {
             emp::SetMapElites(*this, {SCOPE_RES, ENTROPY_RES});
         }

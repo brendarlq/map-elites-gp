@@ -17,6 +17,7 @@ import os
 def main():
     glob_pattern = sys.argv[1]
     outfilename = sys.argv[2]
+    update = sys.argv[3]
     frames = []
     trait_frames = []
 
@@ -45,8 +46,10 @@ def main():
         fitness_df = pd.read_csv(dirname+"/fitness.csv", index_col="update")
         systematics_df = pd.read_csv(dirname+"/systematics.csv", index_col="update")
         population_df = pd.read_csv(dirname+"/population.csv", index_col="update")
-        trait_df = pd.read_csv(dirname+"/traits.dat", index_col="update")
-        # phylodiversity_df = pd.read_csv(dirname+"/phylodiversity.csv", index_col="update")
+        trait_df = pd.read_csv(dirname+"/traits.dat")
+        if update != "all":
+            trait_df = trait_df[trait_df["update"] == int(update)]
+
         # dominant_df = pd.read_csv(dirname+"/dominant.csv", index_col="update")
         # lin_df = pd.read_csv(dirname+"/lineage_mutations.csv", index_col="update")
 
