@@ -23,7 +23,7 @@ EMP_BUILD_CONFIG( MEGPConfig,
   VALUE(SELECTION, std::string, "MAPELITES", "What selection scheme should we use?"),
   VALUE(INST_MUT_RATE, double, 0.01, "Per-site mutation rate for instructions"),
   VALUE(ARG_MUT_RATE, double, 0.01, "Per-site mutation rate for arguments"),
-  VALUE(PROBLEM, std::string, "testcases/examples-squares.csv", "Which set of testcases should we use? (or enter 'box' for the box problem"),
+  VALUE(PROBLEM, std::string, "configs/testcases/examples-squares.csv", "Which set of testcases should we use? (or enter 'box' for the box problem"),
   VALUE(N_TEST_CASES, uint32_t, 11, "How many test cases to use"),  
   VALUE(GENOME_SIZE, int, 20, "Length of genome"),
   VALUE(SCOPE_RES, long unsigned int, 16, "Number of bins to make on scope axis"),
@@ -137,6 +137,7 @@ public:
     std::function<size_t(size_t)> return_id = [](size_t id){return id;};
 
     void Setup(MEGPConfig & config) {
+        Reset();
         SetCache();
         SetMutFun([this](emp::AvidaGP & org, emp::Random & r){
             int count = 0;
@@ -155,8 +156,10 @@ public:
         });
         SetMutateBeforeBirth();
         InitConfigs(config);
+        
+        #ifndef EMSCRIPTEN
         SetupFitnessFile().SetTimingRepeat(10);
-        SetupSystematicsFile().SetTimingRepeat(10);
+        // SetupSystematicsFile().SetTimingRepeat(10);
         SetupPopulationFile().SetTimingRepeat(10);
 
         emp::Ptr<emp::ContainerDataFile<emp::vector<size_t> > > tfile;
@@ -168,13 +171,12 @@ public:
         trait_file.AddContainerFun(scope_count_fun_ptr, "scope_count", "Number of scopes used");
         trait_file.AddContainerFun(goal_function_ptr, "fitness", "Fitness");
         trait_file.AddContainerFun(return_id, "id", "ID");
-	trait_file.AddContainerFun(scope_count_bin, "scope_count_bin", "Bin that scope count falls into");
-	trait_file.AddContainerFun(inst_ent_bin, "inst_ent_bin", "Bin that instruction entropy falls into");
+	    trait_file.AddContainerFun(scope_count_bin, "scope_count_bin", "Bin that scope count falls into");
+	    trait_file.AddContainerFun(inst_ent_bin, "inst_ent_bin", "Bin that instruction entropy falls into");
         trait_file.AddVar(update, "update", "Update");
         trait_file.SetTimingRepeat(10);
         trait_file.PrintHeaderKeys();
 
-        #ifndef EMSCRIPTEN
         OnUpdate([this](int ud){if (ud % 100 == 0){SnapshotSingleFile(ud);}});
         #endif
 

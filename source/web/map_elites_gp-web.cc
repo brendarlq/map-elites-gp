@@ -8,9 +8,18 @@
 namespace UI = emp::web;
 MEGPConfig config;
 
-UI::Document doc("emp_base");
+UI::Document world_display("emp_base");
+UI::Document program_info("program_info");
+UI::Document settings("settings");
+
+UI::Selector problem;
+UI::TextArea genome_size;
+UI::TextArea n_test_cases;
+UI::TextArea inst_mut_rate;
+UI::TextArea arg_mut_rate;
+
 UI::Canvas canvas;
-UI::Div program_info;
+// UI::Div program_info;
 const double world_width = 800;
 const double world_height = 800;
 
@@ -52,11 +61,11 @@ void DrawWorldCanvas() {
   }
 
   // Add a plus sign in the middle.
-  const double mid_x = org_x * world_x / 2.0;
-  const double mid_y = org_y * world_y / 2.0;
-  const double plus_bar = org_r * world_x;
-  canvas.Line(mid_x, mid_y-plus_bar, mid_x, mid_y+plus_bar, "#8888FF");
-  canvas.Line(mid_x-plus_bar, mid_y, mid_x+plus_bar, mid_y, "#8888FF");
+  // const double mid_x = org_x * world_x / 2.0;
+  // const double mid_y = org_y * world_y / 2.0;
+  // const double plus_bar = org_r * world_x;
+  // canvas.Line(mid_x, mid_y-plus_bar, mid_x, mid_y+plus_bar, "#8888FF");
+  // canvas.Line(mid_x-plus_bar, mid_y, mid_x+plus_bar, mid_y, "#8888FF");
 
   // doc.Text("ud_text").Redraw();
 }
@@ -64,6 +73,11 @@ void DrawWorldCanvas() {
 
 void CanvasClick(int x, int y) {
   program_info.Clear();
+  program_info.SetAttr("class", "card-body");
+  
+  // std::cout << "x: " << in_x << " y: " << in_y  <<std::endl;
+  // double x = canvas.GetAdjustedX(in_x);
+  // double y = canvas.GetAdjustedY(in_y);
 
   // UI::Canvas canvas = doc.Canvas("world_canvas");
   const double canvas_x = (double) canvas.GetWidth();
@@ -75,13 +89,19 @@ void CanvasClick(int x, int y) {
   const size_t world_y = world.GetHeight();
   size_t pos_x = (size_t) (world_x * px);
   size_t pos_y = (size_t) (world_y * py);
-  // std::cout << "x: " << x << " y: " << y << "world_x: " << world_x << " world_y: " << world_y << " canvas_x: " << canvas_x <<" canvas_y: " << canvas_y  << " px: " << px <<  " py: " << py <<" pos_x: " << pos_x << " pos_y: " << pos_y <<std::endl;
+  std::cout << "x: " << x << " y: " << y << "world_x: " << world_x << " world_y: " << world_y << " canvas_x: " << canvas_x <<" canvas_y: " << canvas_y  << " px: " << px <<  " py: " << py <<" pos_x: " << pos_x << " pos_y: " << pos_y <<std::endl;
   size_t org_id = pos_y * world_x + pos_x;
   std::stringstream ss;
   if (world.CalcFitnessID(org_id) > 0.0) {
-    ss << "Fitness: " << world.CalcFitnessID(org_id) << "<br>";
+    ss << "<h3 class='card-title'>Program information</h3>";
+    ss << "<h5 class='card-subtitle mb-2 '>Fitness: " << world.CalcFitnessID(org_id)/1000.0 << "</h5> <p class='card-text'>";
     world[org_id].PrintGenomeHTML(ss);
-    program_info << UI::Text() << ss.str();
+    ss << "</p>";
+    // program_info << UI::Text() << ss.str();
+    program_info << ss.str();
+  } else {
+    program_info << "<p class='card-text'>Click on a grid cell to see the program inside<p>";
+    std::cout << "No org here" << std::endl;
   }
 
   // emp::Alert("Click at (", pos_x, ",", pos_y, ") = ", org_id);
@@ -90,18 +110,35 @@ void CanvasClick(int x, int y) {
 
 int main()
 {
-  doc << "<h1>Evolving AvidaGP Programs with MAP-Elites</h1>";
+  world_display << "<h2>Evolving ScopeGP Programs with MAP-Elites</h2>";
+  program_info.SetAttr("class", "card-body");
+  program_info << "<p class='card-text'>Click on a grid cell to see the program inside<p>";
   world.Setup(config);
 
-  // Add some Buttons
-  doc << UI::Button( [](){ emp::RandomSelect(world, 1); DrawWorldCanvas(); }, "Do Birth", "birth_button");
-  doc << UI::Button( [](){ emp::RandomSelect(world, 100); DrawWorldCanvas(); }, "Do Birth 100", "birth_100_button");
-  doc << UI::Button( [](){ emp::RandomSelect(world, 1000); DrawWorldCanvas(); }, "Do Birth 1000", "birth_1000_button");
-  doc << UI::Button( [](){ emp::RandomSelect(world, 10000); DrawWorldCanvas(); }, "Do Birth 10000", "birth_10000_button");
-  doc << "<br>";
+  problem.SetOption("Square", [](){config.PROBLEM("configs/testcases/examples-squares.csv"); world.Setup(config);DrawWorldCanvas();});
+  problem.SetOption("Count odds", [](){config.PROBLEM("configs/testcases/count-odds.csv"); world.Setup(config);DrawWorldCanvas();});
 
-  canvas = doc.AddCanvas(world_width, world_height, "world_canvas");
-  program_info = doc.AddDiv("program_info");
+  n_test_cases.SetCallback([](const std::string & curr){config.N_TEST_CASES(emp::from_string<int>(curr)); world.Setup(config);DrawWorldCanvas();});
+  genome_size.SetCallback([](const std::string & curr){config.GENOME_SIZE(emp::from_string<int>(curr)); world.Setup(config);DrawWorldCanvas();});
+  inst_mut_rate.SetCallback([](const std::string & curr){config.INST_MUT_RATE(emp::from_string<double>(curr)); world.Setup(config);DrawWorldCanvas();});
+  arg_mut_rate.SetCallback([](const std::string & curr){config.ARG_MUT_RATE(emp::from_string<double>(curr)); world.Setup(config);DrawWorldCanvas();});
+
+  settings << "Problem: " << problem << "<br>";
+  settings << "Number of test cases: " << n_test_cases << "<br>";
+  settings << "Genome length: " << genome_size << "<br>";
+  settings << "Instruction mutation rate: " << inst_mut_rate << "<br>";
+  settings << "Argument mutation rate: " << arg_mut_rate << "<br>";
+
+  // Add some Buttons
+  world_display << UI::Button( [](){ emp::RandomSelect(world, 1); DrawWorldCanvas(); }, "Reproduce", "birth_button").SetAttr("class", "btn btn-primary");
+  world_display << UI::Button( [](){ emp::RandomSelect(world, 100); DrawWorldCanvas(); }, "Reproduce 100", "birth_100_button").SetAttr("class", "btn btn-primary ml-1");
+  world_display << UI::Button( [](){ emp::RandomSelect(world, 1000); DrawWorldCanvas(); }, "Reproduce 1000", "birth_1000_button").SetAttr("class", "btn btn-primary ml-1");
+  world_display << UI::Button( [](){ emp::RandomSelect(world, 10000); DrawWorldCanvas(); }, "Reproduce 10000", "birth_10000_button").SetAttr("class", "btn btn-primary ml-1");
+  world_display << "<br><br>";
+  
+  canvas = world_display.AddCanvas(world_width, world_height, "world_canvas");
+  // program_info = program_display.AddDiv("program_info");
+  // program_info.SetCSS("right", 0);
   canvas.On("click", CanvasClick);
   DrawWorldCanvas();
 }
