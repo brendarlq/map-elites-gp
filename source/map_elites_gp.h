@@ -100,10 +100,12 @@ public:
 
     std::function<int(emp::AvidaGP &)> scope_count_fun = [this](emp::AvidaGP & val){ 
         std::set<size_t> scopes;
+        val.ResetHardware();
+        val.SetInput(0, 1);
         scopes.insert(val.CurScope());
 
         for (int i = 0; i < EVAL_TIME; i++) {
-            val.Process(1);
+            val.SingleProcess();
             scopes.insert(val.CurScope());
         }
         return scopes.size(); 

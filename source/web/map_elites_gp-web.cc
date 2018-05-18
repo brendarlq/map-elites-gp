@@ -10,6 +10,7 @@ MEGPConfig config;
 
 UI::Document world_display("emp_base");
 UI::Document program_info("program_info");
+UI::Document program_exec("program_exec");
 UI::Document settings("settings");
 
 UI::Selector problem;
@@ -70,6 +71,17 @@ void DrawWorldCanvas() {
   // doc.Text("ud_text").Redraw();
 }
 
+void ExecuteProgram(emp::AvidaGP & org) {
+  program_exec.Clear();
+  program_exec.SetAttr("class", "card-body visible");
+  program_exec << "<h3 class='card-title'>Program execution</h3>";
+  std::stringstream ss;
+  ss << "</h5> <p class='card-text'>";
+  org.PrintStateHTML(ss);
+  ss << "</p>";
+  program_exec << ss.str();
+  program_exec << UI::Button( [&org](){ org.SingleProcess(); ExecuteProgram(org); }, "Step", "step_button").SetAttr("class", "btn btn-primary");
+}
 
 void CanvasClick(int x, int y) {
   program_info.Clear();
@@ -93,12 +105,21 @@ void CanvasClick(int x, int y) {
   size_t org_id = pos_y * world_x + pos_x;
   std::stringstream ss;
   if (world.CalcFitnessID(org_id) > 0.0) {
+    double entropy = world.inst_ent_fun(world.GetOrg(org_id));
+    int scope_count = world.scope_count_fun(world.GetOrg(org_id));
     ss << "<h3 class='card-title'>Program information</h3>";
-    ss << "<h5 class='card-subtitle mb-2 '>Fitness: " << world.CalcFitnessID(org_id)/1000.0 << "</h5> <p class='card-text'>";
+    ss << "<h5 class='card-subtitle mb-2 '>Fitness: " << world.CalcFitnessID(org_id)/1000.0 << " Scopes: " << scope_count << " Entropy: " << entropy << "</h5> <p class='card-text'>";
     world[org_id].PrintGenomeHTML(ss);
-    ss << "</p>";
+
     // program_info << UI::Text() << ss.str();
     program_info << ss.str();
+    program_info << UI::Button( [org_id](){ 
+      world.GetOrg(org_id).ResetHardware();
+      world.GetOrg(org_id).SetInput(0, 1);
+      ExecuteProgram(world.GetOrg(org_id)); 
+    }, "Execute", "exec_button").SetAttr("class", "btn btn-primary");
+    program_info << "</p>";
+
   } else {
     program_info << "<p class='card-text'>Click on a grid cell to see the program inside<p>";
     std::cout << "No org here" << std::endl;
@@ -114,6 +135,8 @@ int main()
   program_info.SetAttr("class", "card-body");
   program_info << "<p class='card-text'>Click on a grid cell to see the program inside<p>";
   world.Setup(config);
+
+  program_exec.SetAttr("class", "card-body invisible");
 
   problem.SetOption("Square", [](){config.PROBLEM("configs/testcases/examples-squares.csv"); world.Setup(config);DrawWorldCanvas();});
   problem.SetOption("Count odds", [](){config.PROBLEM("configs/testcases/count-odds.csv"); world.Setup(config);DrawWorldCanvas();});
