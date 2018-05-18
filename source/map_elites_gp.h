@@ -139,6 +139,7 @@ public:
     void Setup(MEGPConfig & config) {
         Reset();
         SetCache();
+        InitConfigs(config);
         SetMutFun([this](emp::AvidaGP & org, emp::Random & r){
             int count = 0;
             for (int i = 0; i < GENOME_SIZE; ++i) {
@@ -155,7 +156,6 @@ public:
             return count;
         });
         SetMutateBeforeBirth();
-        InitConfigs(config);
         
         #ifndef EMSCRIPTEN
         SetupFitnessFile().SetTimingRepeat(10);
