@@ -21,14 +21,17 @@ EMP_BUILD_CONFIG( MEGPConfig,
   VALUE(POP_SIZE, uint32_t, 100, "Number of organisms in the popoulation."),
   VALUE(UPDATES, uint32_t, 1000, "How many generations should we process?"),
   VALUE(SELECTION, std::string, "MAPELITES", "What selection scheme should we use?"),
-  VALUE(INST_MUT_RATE, double, 0.01, "Per-site mutation rate for instructions"),
-  VALUE(ARG_MUT_RATE, double, 0.01, "Per-site mutation rate for arguments"),
+  VALUE(INST_MUT_RATE, double, 0.005, "Per-site mutation rate for instructions"),
+  VALUE(ARG_MUT_RATE, double, 0.005, "Per-site mutation rate for arguments"),
+  VALUE(INS_MUT_RATE, double, 0.005, "Per-site mutation rate for arguments"),
+  VALUE(DEL_MUT_RATE, double, 0.005, "Per-site mutation rate for arguments"),
   VALUE(PROBLEM, std::string, "configs/testcases/examples-squares.csv", "Which set of testcases should we use? (or enter 'box' for the box problem"),
   VALUE(N_TEST_CASES, uint32_t, 11, "How many test cases to use"),  
   VALUE(GENOME_SIZE, int, 20, "Length of genome"),
   VALUE(SCOPE_RES, long unsigned int, 16, "Number of bins to make on scope axis"),
   VALUE(ENTROPY_RES, long unsigned int, 25, "Number of bins to make on entropy axis"),
-  VALUE(EVAL_TIME, int, 200, "Steps to evaluate for.")
+  VALUE(EVAL_TIME, int, 200, "Steps to evaluate for."),
+  VALUE(MAX_SIZE, int, 500, "Maximum genome length.")
 )
 
 class MapElitesGPWorld : public emp::World<emp::AvidaGP> {
@@ -38,10 +41,13 @@ public:
     int SEED;
     int GENOME_SIZE;
     int EVAL_TIME;
+    int MAX_SIZE;
     long unsigned int SCOPE_RES;
     long unsigned int ENTROPY_RES;
     double INST_MUT_RATE;
     double ARG_MUT_RATE;
+    double INS_MUT_RATE;
+    double DEL_MUT_RATE;
     uint32_t TOURNAMENT_SIZE;
     uint32_t POP_SIZE;
     uint32_t UPDATES;
@@ -144,7 +150,7 @@ public:
         InitConfigs(config);
         SetMutFun([this](emp::AvidaGP & org, emp::Random & r){
             int count = 0;
-            for (int i = 0; i < GENOME_SIZE; ++i) {
+            for (int i = 0; i < org.GetSize(); ++i) {
                 if (r.P(INST_MUT_RATE)) {
                     org.RandomizeInst(i, r);
                     count++;
@@ -152,6 +158,19 @@ public:
                 if (r.P(ARG_MUT_RATE)) {
                     org.SetInst(i, org.GetInst(i).id, r.GetUInt(org.CPU_SIZE), r.GetUInt(org.CPU_SIZE), r.GetUInt(org.CPU_SIZE));
                     count++;
+                }
+                if (r.P(INS_MUT_RATE)) {
+                    if (org.GetSize() < MAX_SIZE) {
+                        org.genome.sequence.insert(org.genome.sequence.begin() + i, emp::AvidaGP::genome_t::sequence_t::value_type());
+                        org.RandomizeInst(i, r);
+                        count++;
+                    }
+                }
+                if (r.P(DEL_MUT_RATE)) {
+                    if (org.GetSize() > 1) {
+                        org.genome.sequence.erase(org.genome.sequence.begin() + i);
+                        count++;
+                    }
                 }
 
             }
@@ -216,10 +235,13 @@ public:
         TOURNAMENT_SIZE = config.TOURNAMENT_SIZE();
         GENOME_SIZE = config.GENOME_SIZE();
         EVAL_TIME = config.EVAL_TIME();
+        MAX_SIZE = config.MAX_SIZE();
         SCOPE_RES = config.SCOPE_RES();
         ENTROPY_RES = config.ENTROPY_RES();
         INST_MUT_RATE = config.INST_MUT_RATE();
         ARG_MUT_RATE = config.ARG_MUT_RATE();
+        INS_MUT_RATE = config.INS_MUT_RATE();
+        DEL_MUT_RATE = config.DEL_MUT_RATE();
         POP_SIZE = config.POP_SIZE();
         UPDATES = config.UPDATES();
         N_TEST_CASES = config.N_TEST_CASES();    
