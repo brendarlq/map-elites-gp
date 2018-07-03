@@ -58,6 +58,9 @@ public:
     emp::DataNode<double, emp::data::Range> evolutionary_distinctiveness;
 
     TestcaseSet<int, double> testcases;
+
+    emp::vector<std::function<double(emp::AvidaGP&)> > fit_set;
+
     std::function<double(emp::AvidaGP&)> goal_function = [this](emp::AvidaGP & org){
         double score = 0;
         emp::Random rand = GetRandom();
@@ -83,7 +86,7 @@ public:
             }
 
             if (outputs.size() != 0) {
-                result = 1 / (std::abs(org.GetOutput(min_output) - testcases[testcase].second)/divisor);
+                result = 1 / (std::abs(org.GetOutput(min_output) - testcases[testcase].second)/std::abs(divisor));
             } else {
                 result = 0;
             }
@@ -210,6 +213,44 @@ public:
             emp::SetMapElites(*this, {SCOPE_RES, ENTROPY_RES});
         }
 
+        if (SELECTION == "LEXICASE") {
+
+            for (size_t testcase = 0; testcase < N_TEST_CASES; ++testcase) {
+                fit_set.push_back([testcase, this](emp::AvidaGP & org) {
+                    org.ResetHardware();
+                    for (size_t i = 0; i < testcases[testcase].first.size(); i++) {
+                        org.SetInput(i, testcases[testcase].first[i]);
+                    }
+                    org.Process(EVAL_TIME);
+                    int divisor = testcases[testcase].second;
+                    if (divisor == 0) {
+                        divisor = 1;
+                    }
+                    const std::unordered_map<int, double> & outputs = org.GetOutputs();
+                    int min_output = 0;
+                    double result;
+                    for (auto out : outputs) {
+                        if (out.first < min_output) {
+                            min_output = out.first;
+                        }
+                    }
+
+                    if (outputs.size() != 0) {
+                        result = 1 / (std::abs(org.GetOutput(min_output) - testcases[testcase].second)/std::abs(divisor));
+                    } else {
+                        result = 0;
+                    }
+
+                    // emp_assert(std::abs(result) != INFINITY);
+                    if (result > 1000) {
+                        result = 1000;
+                    }
+                    return result;
+                });
+
+            }
+        }
+
         InitPop();
     }
 
@@ -265,6 +306,10 @@ public:
             emp::RandomSelectSparse(*this, POP_SIZE);
         } else if (SELECTION =="TOURNAMENT") {
             emp::TournamentSelect(*this, TOURNAMENT_SIZE, POP_SIZE);
+        } else if (SELECTION =="RANDOM") {
+            emp::RandomSelect(*this, POP_SIZE);
+        } else if (SELECTION =="LEXICASE") {
+            emp::LexicaseSelect(*this, fit_set, POP_SIZE);
         } else {
             emp_assert(false && "INVALID SELECTION SCEHME", SELECTION);
         }
